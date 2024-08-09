@@ -54,6 +54,8 @@ export class AndroidRemote extends EventEmitter {
 
         this.remoteManager.on('unpaired', () => this.emit('unpaired'));
 
+        this.remoteManager.on('error_connection', (error) => this.emit('error_connection', error));
+
         await new Promise(resolve => setTimeout(resolve, 1000));
 
         let started = await this.remoteManager.start().catch((error) => {
