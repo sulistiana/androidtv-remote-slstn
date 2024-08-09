@@ -1,6 +1,6 @@
 {
-  "name": "androidtv-remote",
-  "version": "1.0.10",
+  "name": "androidtv-remote-slstn",
+  "version": "1.0.11",
   "description": "AndroidTV Remote",
   "main": "dist/index.js",
   "engines": {
