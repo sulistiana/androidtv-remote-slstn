@@ -32,7 +32,7 @@ export class AndroidRemote extends EventEmitter {
 
             this.pairingManager = new PairingManager(this.host, this.pairing_port, this.cert, this.service_name)
             this.pairingManager.on('secret', () => this.emit('secret'));
-
+            this.pairingManager.on('error_connection', (error) => this.emit('error_connection', error));
             let paired = await this.pairingManager.start().catch((error) => {
                 console.error(error);
             });
@@ -53,8 +53,6 @@ export class AndroidRemote extends EventEmitter {
         this.remoteManager.on('ready', () => this.emit('ready'));
 
         this.remoteManager.on('unpaired', () => this.emit('unpaired'));
-
-        this.remoteManager.on('error_connection', (error) => this.emit('error_connection', error));
 
         await new Promise(resolve => setTimeout(resolve, 1000));
 

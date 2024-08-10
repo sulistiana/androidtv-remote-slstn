@@ -111,8 +111,8 @@ class PairingManager extends EventEmitter {
             });
 
             this.client.on('error', (error) => {
+                this.emit("error_connection", error)
                 console.error(error);
-                this.emit("error_connection", error.message)
             });
         });
 
