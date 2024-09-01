@@ -30,6 +30,7 @@ class RemoteManager extends EventEmitter {
 
             this.client.on('timeout', () => {
                 console.debug('timeout');
+                resolve('timeout')
                 this.client.destroy();
             });
 
@@ -105,9 +106,11 @@ class RemoteManager extends EventEmitter {
                     else if(message.remoteError){
                         //console.debug("Receive REMOTE ERROR");
                         this.emit('error', {error : message.remoteError});
+                        resolve(message.remoteError)
                     }
                     else{
                         console.log("What else ?");
+                        resolve("unknown")
                     }
                     this.chunks = Buffer.from([]);
                 }
@@ -119,31 +122,36 @@ class RemoteManager extends EventEmitter {
                     reject(this.error.code);
                     if(this.error.code === "ECONNRESET"){
                         this.emit('unpaired');
+                        resolve("unpaired")
                     }
                     else if(this.error.code === "ECONNREFUSED"){
                         // L'appareil n'est pas encore prêt : on relance
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        await this.start().catch((error) => {
-                            console.error(error);
-                        });
+                        // await new Promise(resolve => setTimeout(resolve, 1000));
+                        // await this.start().catch((error) => {
+                        //     console.error(error);
+                        // });
+                        resolve("connection refused")
                     }
                     else if(this.error.code === "EHOSTDOWN"){
                         // L'appareil est down, on ne fait rien
+                        resolve("host down")
                     }
                     else{
                         // Dans le doute on redémarre
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        await this.start().catch((error) => {
-                            console.error(error);
-                        });
+                        // await new Promise(resolve => setTimeout(resolve, 1000));
+                        // await this.start().catch((error) => {
+                        //     console.error(error);
+                        // });
+                        resolve("unknown")
                     }
                 }
                 else {
                     // Si pas d'erreur on relance. Si elle s'est éteinte alors une erreur empéchera de relancer encore
                     await new Promise(resolve => setTimeout(resolve, 1000));
-                    await this.start().catch((error) => {
-                        console.error(error);
-                    });
+                    // await this.start().catch((error) => {
+                    //     console.error(error);
+                    // });
+                    resolve("unknown")
                 }
             });
 
