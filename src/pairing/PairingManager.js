@@ -77,7 +77,6 @@ class PairingManager extends EventEmitter {
 
                     if (message.status !== pairingMessageManager.Status.STATUS_OK){
                         this.client.destroy(new Error(message.status));
-                        
                     }
                     else {
                         if(message.pairingRequestAck){
@@ -112,9 +111,8 @@ class PairingManager extends EventEmitter {
             });
 
             this.client.on('error', (error) => {
-                this.emit("error_connection", error)
                 console.error(error);
-                resolve(error.message);
+                resolve({state: "error", msg: error.message});
             });
         });
 

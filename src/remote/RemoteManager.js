@@ -29,9 +29,8 @@ class RemoteManager extends EventEmitter {
             });
 
             this.client.on('timeout', () => {
-                console.debug('timeout');
                 this.client.destroy();
-                resolve({state: "timeout", "message": "Connection timeout"});
+                resolve({state: "error", message: "Connection timeout"});
             });
 
             // Le ping est reçu toutes les 5 secondes
@@ -106,11 +105,11 @@ class RemoteManager extends EventEmitter {
                     else if(message.remoteError){
                         //console.debug("Receive REMOTE ERROR");
                         this.emit('error', {error : message.remoteError});
-                        resolve({state: "error", "message": message.remoteError})
+                        resolve({state: "error", message: message.remoteError})
                     }
                     else{
                         console.log("What else ?");
-                        resolve({state: "unknown", "message": "Unknown error"})
+                        resolve({state: "error", message: "Unknown error"})
                     }
                     this.chunks = Buffer.from([]);
                 }
@@ -122,8 +121,7 @@ class RemoteManager extends EventEmitter {
                     reject(this.error.code);
                     if(this.error.code === "ECONNRESET"){
                         this.emit('unpaired');
-                        resolve("unpaired")
-                        resolve({state: "unpaired", "message": "Device is not paired"})
+                        resolve({state: "error", message: "Device is not paired"})
                     }
                     else if(this.error.code === "ECONNREFUSED"){
                         // L'appareil n'est pas encore prêt : on relance
@@ -131,11 +129,11 @@ class RemoteManager extends EventEmitter {
                         // await this.start().catch((error) => {
                         //     console.error(error);
                         // });
-                        resolve({state: "refused", "message": "Connection refused"})
+                        resolve({state: "error", message: "Connection refused"})
                     }
                     else if(this.error.code === "EHOSTDOWN"){
                         // L'appareil est down, on ne fait rien
-                        resolve({state: "down", "message": "Host is down"})
+                        resolve({state: "error", message: "Host is down"})
                     }
                     else{
                         // Dans le doute on redémarre
@@ -143,7 +141,7 @@ class RemoteManager extends EventEmitter {
                         // await this.start().catch((error) => {
                         //     console.error(error);
                         // });
-                        resolve({state: "unknown", "message": "Unknown error"})
+                        resolve({state: "error", message: "Unknown error"})
                     }
                 }
                 else {
@@ -152,14 +150,14 @@ class RemoteManager extends EventEmitter {
                     // await this.start().catch((error) => {
                     //     console.error(error);
                     // });
-                    resolve({state: "unknown", "message": "Unknown error"})
+                    resolve({state: "error", message: "Unknown error"})
                 }
             });
 
             this.client.on('error', (error) => {
                 console.error(this.host, error);
                 this.error = error;
-                resolve({state: "error", "message": error.message});
+                resolve({state: "error", message: error.message});
             });
         });
 
