@@ -34,6 +34,7 @@ export class AndroidRemote extends EventEmitter {
             this.pairingManager.on('secret', () => this.emit('secret'));
             let paired = await this.pairingManager.start().catch((error) => {
                 console.error(error);
+                this.emit('error', error);
             });
 
             if (!paired) {
@@ -57,6 +58,7 @@ export class AndroidRemote extends EventEmitter {
 
         let started = await this.remoteManager.start().catch((error) => {
             console.error(error);
+            this.emit('error', error);
         });
 
         return started;
