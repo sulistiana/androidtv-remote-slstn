@@ -30,6 +30,7 @@ class RemoteManager extends EventEmitter {
 
             this.client.on('timeout', () => {
                 this.client.destroy();
+                this.emit('error', {message: "Connection timeout"});
                 resolve({state: "error", message: "Connection timeout"});
             });
 
@@ -104,11 +105,12 @@ class RemoteManager extends EventEmitter {
                     }
                     else if(message.remoteError){
                         //console.debug("Receive REMOTE ERROR");
-                        this.emit('error', {error : message.remoteError});
+                        this.emit('error', {message : message.remoteError});
                         resolve({state: "error", message: message.remoteError})
                     }
                     else{
                         console.log("What else ?");
+                        this.emit('error', {message: "Unknown error"});
                         resolve({state: "error", message: "Unknown error"})
                     }
                     this.chunks = Buffer.from([]);
@@ -129,10 +131,12 @@ class RemoteManager extends EventEmitter {
                         // await this.start().catch((error) => {
                         //     console.error(error);
                         // });
+                        this.emit('error', {message: "Connection refused"});
                         resolve({state: "error", message: "Connection refused"})
                     }
                     else if(this.error.code === "EHOSTDOWN"){
                         // L'appareil est down, on ne fait rien
+                        this.emit('error', {message: "Host is down"});
                         resolve({state: "error", message: "Host is down"})
                     }
                     else{
@@ -141,6 +145,7 @@ class RemoteManager extends EventEmitter {
                         // await this.start().catch((error) => {
                         //     console.error(error);
                         // });
+                        this.emit('error', {message: "Unknown error"});
                         resolve({state: "error", message: "Unknown error"})
                     }
                 }
@@ -150,6 +155,7 @@ class RemoteManager extends EventEmitter {
                     // await this.start().catch((error) => {
                     //     console.error(error);
                     // });
+                    this.emit('error', {message: "Unknown error"});
                     resolve({state: "error", message: "Unknown error"})
                 }
             });
@@ -157,6 +163,7 @@ class RemoteManager extends EventEmitter {
             this.client.on('error', (error) => {
                 console.error(this.host, error);
                 this.error = error;
+                this.emit('error', error);
                 resolve({state: "error", message: error.message});
             });
         });
