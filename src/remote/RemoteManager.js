@@ -13,6 +13,7 @@ class RemoteManager extends EventEmitter {
   }
 
   async start() {
+    let isEmitedError = false;
     return new Promise((resolve, reject) => {
       let options = {
         key: this.certs.key,
@@ -30,7 +31,10 @@ class RemoteManager extends EventEmitter {
 
       this.client.on("timeout", () => {
         this.client.destroy();
-        this.emit("error", { message: "Connection timeout" });
+        if (!isEmitedError) {
+          this.emit("error", { message: "Connection timeout" });
+          isEmitedError = true;
+        }
         resolve({ state: "error", message: "Connection timeout" });
       });
 
@@ -110,11 +114,17 @@ class RemoteManager extends EventEmitter {
             //console.debug("Receive SET PREFERRED AUDIO DEVICE" + message.remoteSetPreferredAudioDevice);
           } else if (message.remoteError) {
             //console.debug("Receive REMOTE ERROR");
-            this.emit("error", { message: message.remoteError });
+            if (!isEmitedError) {
+              this.emit("error", { message: message.remoteError });
+              isEmitedError = true;
+            }
             resolve({ state: "error", message: message.remoteError });
           } else {
             console.log("What else ?");
-            this.emit("error", this.error);
+            if (!isEmitedError) {
+              this.emit("error", this.error);
+              isEmitedError = true;
+            }
             resolve({ state: "error", message: "Unknown error" });
           }
           this.chunks = Buffer.from([]);
@@ -134,16 +144,25 @@ class RemoteManager extends EventEmitter {
             // await this.start().catch((error) => {
             //     console.error(error);
             // });
-            this.emit("error", { message: "Connection refused" });
+            if (!isEmitedError) {
+              this.emit("error", { message: "Connection refused" });
+              isEmitedError = true;
+            }
             resolve({ state: "error", message: "Connection refused" });
           } else if (this.error.code === "EHOSTDOWN") {
             // L'appareil est down, on ne fait rien
-            this.emit("error", { message: "Host is down" });
+            if (!isEmitedError) {
+              this.emit("error", { message: "Host is down" });
+              isEmitedError = true;
+            }
             resolve({ state: "error", message: "Host is down" });
           } else if (
             this.error.code === "ERR_SSL_SSLV3_ALERT_CERTIFICATE_UNKNOWN"
           ) {
-            this.emit("error", { message: "Certificate is revoked" });
+            if (!isEmitedError) {
+              this.emit("error", { message: "Certificate is revoked" });
+              isEmitedError = true;
+            }
             resolve({
               state: "error",
               message: "Certificate is revoked",
@@ -154,46 +173,66 @@ class RemoteManager extends EventEmitter {
             // await this.start().catch((error) => {
             //     console.error(error);
             // });
-            this.emit("error", this.error);
+            if (!isEmitedError) {
+              this.emit("error", this.error);
+              isEmitedError = true;
+            }
             resolve({ state: "error", message: "Unknown error" });
           }
         } else {
           // Si pas d'erreur on relance. Si elle s'est éteinte alors une erreur empéchera de relancer encore
-        //   await new Promise((resolve) => setTimeout(resolve, 1000));
+          //   await new Promise((resolve) => setTimeout(resolve, 1000));
           // await this.start().catch((error) => {
           //     console.error(error);
           // });
-          if (this.error.code === "ECONNRESET") {
-            this.emit("unpaired");
-            resolve({ state: "error", message: "Device is not paired" });
-          } else if (this.error.code === "ECONNREFUSED") {
-            // L'appareil n'est pas encore prêt : on relance
-            // await new Promise(resolve => setTimeout(resolve, 1000));
-            // await this.start().catch((error) => {
-            //     console.error(error);
-            // });
-            this.emit("error", { message: "Connection refused" });
-            resolve({ state: "error", message: "Connection refused" });
-          } else if (this.error.code === "EHOSTDOWN") {
-            // L'appareil est down, on ne fait rien
-            this.emit("error", { message: "Host is down" });
-            resolve({ state: "error", message: "Host is down" });
-          } else if (
-            this.error.code === "ERR_SSL_SSLV3_ALERT_CERTIFICATE_UNKNOWN"
-          ) {
-            this.emit("error", { message: "Certificate is revoked" });
-            resolve({
-              state: "error",
-              message: "Certificate is revoked",
-            });
+          if (this.error) {
+            if (this.error.code === "ECONNRESET") {
+              this.emit("unpaired");
+              resolve({ state: "error", message: "Device is not paired" });
+            } else if (this.error.code === "ECONNREFUSED") {
+              // L'appareil n'est pas encore prêt : on relance
+              // await new Promise(resolve => setTimeout(resolve, 1000));
+              // await this.start().catch((error) => {
+              //     console.error(error);
+              // });
+              if (!isEmitedError) {
+                this.emit("error", { message: "Connection refused" });
+                isEmitedError = true;
+              }
+              resolve({ state: "error", message: "Connection refused" });
+            } else if (this.error.code === "EHOSTDOWN") {
+              // L'appareil est down, on ne fait rien
+              if (!isEmitedError) {
+                this.emit("error", { message: "Host is down" });
+                isEmitedError = true;
+              }
+              resolve({ state: "error", message: "Host is down" });
+            } else if (
+              this.error.code === "ERR_SSL_SSLV3_ALERT_CERTIFICATE_UNKNOWN"
+            ) {
+              if (!isEmitedError) {
+                this.emit("error", { message: "Certificate is revoked" });
+                isEmitedError = true;
+              }
+              resolve({
+                state: "error",
+                message: "Certificate is revoked",
+              });
+            } else {
+              // Dans le doute on redémarre
+              // await new Promise(resolve => setTimeout(resolve, 1000));
+              // await this.start().catch((error) => {
+              //     console.error(error);
+              // });
+              if (!isEmitedError) {
+                this.emit("error", this.error);
+                isEmitedError = true;
+              }
+              resolve({ state: "error", message: this.error.message });
+            }
           } else {
-            // Dans le doute on redémarre
-            // await new Promise(resolve => setTimeout(resolve, 1000));
-            // await this.start().catch((error) => {
-            //     console.error(error);
-            // });
-            this.emit("error", this.error);
-            resolve({ state: "error", message: "Unknown error" });
+            console.log("Has no error");
+            resolve({ state: "success", message: "Has no error" });
           }
         }
       });
